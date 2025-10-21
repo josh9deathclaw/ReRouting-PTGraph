@@ -1,0 +1,18 @@
+# Ignore data folder
+data/
+data/**
+# Ignore compressed and serialized data
+*.zip
+*.tar
+*.tar.gz
+*.json
+*.csv
+*.pkl
+*.pickle
+*.npz
+*.npy
+*.h5
+# System & cache files
+__pycache__/
+.DS_Store
+.env
