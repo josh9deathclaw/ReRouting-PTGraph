@@ -22,12 +22,25 @@ def build_graph(save=True):
     
     # Add nodes
     for _, station in stations.iterrows():
+        # Create readable node ID
+        station_id = station['station_id']
+        mode_prefix = "pt"
+        if "rail" in station_id:
+            mode_prefix = "train"
+        elif "tram" in station_id:
+            mode_prefix = "tram"
+        elif "bus" in station_id:
+            mode_prefix = "bus"
+
+        node_id = f"{mode_prefix}_{station_id}"
+
         G.add_node(
-            station['station_id'],
+            node_id,
             stop_name=station['stop_name'],
             lat=station['stop_lat'],
             lon=station['stop_lon'],
-            node_type='pt_stop'
+            node_type='pt_stop',
+            mode=mode_prefix
         )
     
     print(f"  ✓ Added {G.number_of_nodes()} nodes")
@@ -36,14 +49,26 @@ def build_graph(save=True):
     edges = pd.read_csv(f'{PROCESSED_DIR}/edges_merged.csv')
     print(f"  Adding {len(edges)} edges...")
     
-    # Add edges (automatically bidirectional with nx.Graph)
     for _, edge in edges.iterrows():
+        def format_node(station_id):
+            if "rail" in station_id:
+                return f"train_{station_id}"
+            elif "tram" in station_id:
+                return f"tram_{station_id}"
+            elif "bus" in station_id:
+                return f"bus_{station_id}"
+            else:
+                return f"pt_{station_id}"
+
+        from_node = format_node(edge['from_station'])
+        to_node = format_node(edge['to_station'])
+
         emissions_factor = EMISSIONS_FACTORS.get(edge['mode'], 0.1)
         emissions = (edge['distance'] / 1000) * emissions_factor
-        
+
         G.add_edge(
-            edge['from_station'],
-            edge['to_station'],
+            from_node,
+            to_node,
             route_id=edge['route_id'],
             route_name=edge['route_name'],
             mode=edge['mode'],
